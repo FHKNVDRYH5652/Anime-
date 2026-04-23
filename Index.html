@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>UNIX PREDICT - WinGo 1 Min Prediction Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #03030f;
+    --bg2: #060614;
+    --card: #090920;
+    --card2: #07071a;
+    --border: #1a1a3e;
+    --border2: #22224a;
+    --purple: #6d28d9;
+    --purple2: #7c3aed;
+    --blue: #2563eb;
+    --cyan: #0891b2;
+    --green: #059669;
+    --red: #dc2626;
+    --violet: #9333ea;
+    --gold: #d97706;
+    --text: #dde4f0;
+    --muted: #7a86a0;
+    --sidebar: 170px;
+    --shine: rgba(255,255,255,0.03);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 2px; }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: var(--sidebar);
+    background: linear-gradient(180deg, #06061a 0%, #030310 100%);
+    border-right: 1px solid var(--border);
+    z-index: 100;
+    display: flex; flex-direction: column;
+    padding: 14px 0;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 7px;
+    padding: 0 14px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px; font-weight: 900; color: white;
+    box-shadow: 0 0 12px rgba(109,40,217,0.5);
+  }
+  .logo-text { font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700; }
+  .logo-text span { display: block; font-size: 8px; color: var(--muted); font-weight: 400; letter-spacing: 2px; }
+
+  .sidebar-tool-info {
+    padding: 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .tool-icon {
+    width: 44px; height: 44px; margin: 0 auto 8px;
+    background: linear-gradient(135deg, #120e2e, #1a0d3e);
+    border: 2px solid var(--purple);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 15px rgba(109,40,217,0.4);
+    animation: pulseBorder 2s ease-in-out infinite;
+  }
+  @keyframes pulseBorder {
+    0%,100% { box-shadow: 0 0 10px rgba(109,40,217,0.3); }
+    50% { box-shadow: 0 0 28px rgba(109,40,217,0.8); }
+  }
+  .tool-name { font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: var(--violet); }
+  .tool-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-top: 2px; }
+
+  .nav-items { flex: 1; padding: 10px 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: 0;
+    transition: all 0.2s;
+    font-size: 13px; font-weight: 700;
+    color: var(--muted);
+    border-left: 3px solid transparent;
+    position: relative;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(109,40,217,0.12); }
+  .nav-item.active {
+    color: white;
+    background: linear-gradient(90deg, rgba(109,40,217,0.3), transparent);
+    border-left: 3px solid var(--purple2);
+  }
+  .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-bottom {
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+  }
+  .secure-badge {
+    background: rgba(5,150,105,0.08);
+    border: 1px solid rgba(5,150,105,0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .secure-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .secure-text { font-size: 10px; }
+  .secure-text strong { display: block; color: var(--green); font-size: 11px; }
+
+  /* TOPNAV */
+  .topnav {
+    position: fixed; top: 0; left: var(--sidebar); right: 0;
+    height: 54px;
+    background: rgba(3,3,15,0.97);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    z-index: 99;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+  }
+  .topnav-links { display: flex; gap: 6px; }
+  .topnav-link {
+    padding: 6px 14px;
+    font-size: 13px; font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    position: relative;
+    letter-spacing: 0.3px;
+  }
+  .topnav-link:hover { color: var(--text); }
+  .topnav-link.active { color: var(--violet); }
+  .topnav-link.active::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 14px; right: 14px;
+    height: 2px; background: var(--purple);
+  }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(5,150,105,0.12);
+    border: 1px solid rgba(5,150,105,0.35);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px; font-weight: 700;
+    color: var(--green);
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+  }
+  .live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: blink 1s infinite; }
+
+  /* MAIN */
+  .main {
+    margin-left: var(--sidebar);
+    padding-top: 54px;
+    min-height: 100vh;
+  }
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  /* HERO */
+  .hero {
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    height: 220px;
+    background: linear-gradient(135deg, #06061e 0%, #130820 50%, #060e20 100%);
+    border: 1px solid var(--border2);
+    margin-bottom: 14px;
+    display: flex;
+    box-shadow: 0 0 40px rgba(109,40,217,0.15), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(109,40,217,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-img {
+    width: 55%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .hero-text {
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 20px 20px 20px 10px;
+    position: relative; z-index: 1;
+  }
+  .hero-text h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px; font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 20px rgba(109,40,217,0.4);
+  }
+  .hero-text h1 .hl { color: var(--violet); }
+  .hero-text p { font-size: 11px; color: var(--muted); margin-top: 8px; font-weight: 600; }
+  .hero-text p span { display: block; width: 30px; height: 2px; background: var(--purple); margin-top: 6px; }
+
+  /* RESULTS BAR */
+  .results-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: inset 0 1px 0 var(--shine);
+  }
+  .results-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .results-title {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .view-history-btn {
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(109,40,217,0.12);
+    border: 1px solid rgba(109,40,217,0.35);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 10px; font-weight: 700;
+    color: var(--violet);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .view-history-btn:hover { background: rgba(109,40,217,0.25); }
+  .results-scroll-wrap { overflow-x: auto; }
+  .results-row {
+    display: flex; gap: 10px;
+    min-width: max-content;
+    padding-bottom: 4px;
+    flex-direction: row;
+  }
+  .result-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    min-width: 38px;
+  }
+  .result-idx {
+    font-size: 9px; color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .result-num {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    border: 2px solid;
+    position: relative;
+    transition: transform 0.2s;
+    font-weight: 900;
+  }
+  /* Number size classes */
+  .result-num.num-small { font-size: 13px; }
+  .result-num.num-big   { font-size: 18px; }
+
+  .result-num:hover { transform: scale(1.1); }
+  .result-num.red    { color: var(--red);    border-color: rgba(220,38,38,0.5);  background: rgba(220,38,38,0.08); }
+  .result-num.green  { color: var(--green);  border-color: rgba(5,150,105,0.5);  background: rgba(5,150,105,0.08); }
+  .result-num.violet { color: var(--violet); border-color: rgba(147,51,234,0.5); background: rgba(147,51,234,0.08); }
+  .result-num.newest { animation: pulseNew 1s ease; }
+  @keyframes pulseNew { 0%{transform:scale(1.3);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+  /* PREDICT BUTTON */
+  .predict-btn {
+    width: 100%;
+    background: linear-gradient(90deg, #5b21b6, #4c1d95, #1e3a8a);
+    background-size: 200% 100%;
+    border: none; border-radius: 10px;
+    padding: 14px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px; font-weight: 700;
+    color: white;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 24px rgba(91,33,182,0.5);
+    animation: gradShift 3s linear infinite;
+    letter-spacing: 1.5px;
+    margin-top: 12px;
+  }
+  @keyframes gradShift { 0%{background-position:0%} 100%{background-position:200%} }
+  .predict-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 35px rgba(91,33,182,0.7); }
+  .predict-btn:active { transform: translateY(0); }
+  .predict-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .predict-btn .btn-icon { font-size: 18px; }
+
+  /* ANALYSIS + PREDICTION GRID */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .analysis-card, .prediction-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    min-height: 260px;
+    box-shadow: inset 0 1px 0 var(--shine);
+  }
+  .card-title {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px; font-weight: 700;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.5px;
+  }
+
+  /* ANALYSIS STEPS */
+  .analysis-step {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(26,26,62,0.8);
+  }
+  .analysis-step:last-child { border-bottom: none; }
+  .step-icon-img {
+    width: 26px; height: 26px; min-width: 26px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 4px rgba(109,40,217,0.5));
+  }
+  .step-info { flex: 1; }
+  .step-name { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+  .step-sub { font-size: 9px; color: var(--muted); margin-top: 2px; font-weight: 600; }
+  .step-viz { width: 60px; height: 18px; position: relative; overflow: hidden; }
+  .step-viz canvas { width: 100%; height: 100%; }
+  .step-check {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    transition: all 0.5s;
+    flex-shrink: 0;
+  }
+  .step-check.done { border-color: var(--purple2); background: rgba(109,40,217,0.25); color: var(--violet); }
+  .step-check.loading { border-color: var(--blue); animation: spin 1s linear infinite; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+
+  .analysis-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .analysis-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 1.5s infinite; }
+  .progress-ring-wrap { position: relative; width: 42px; height: 42px; }
+  .progress-ring { transform: rotate(-90deg); }
+  .progress-ring circle { transition: stroke-dashoffset 0.5s ease; }
+  .progress-pct {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 9px; font-weight: 700;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  /* PREDICTION RESULT */
+  .prediction-placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 180px; color: var(--muted); font-size: 12px; text-align: center; gap: 8px;
+    font-weight: 600;
+  }
+  .prediction-display { display: none; }
+  .pred-label { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-align: center; margin-bottom: 8px; }
+  .pred-number-wrap {
+    position: relative; width: 110px; height: 110px; margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pred-ring-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .pred-ring-inner {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #0e0830, #06061a);
+    border: 2px solid rgba(109,40,217,0.45);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 35px rgba(109,40,217,0.5), inset 0 0 20px rgba(109,40,217,0.12);
+    position: relative; z-index: 1;
+  }
+  .pred-num-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 38px; font-weight: 900;
+    background: linear-gradient(135deg, var(--violet), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: none;
+  }
+  .pred-details {
+    display: flex; gap: 8px; justify-content: center; margin-bottom: 10px;
+  }
+  .pred-tag {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .pred-tag.size { background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.35); color: #60a5fa; }
+  .pred-tag.size-small { background: rgba(8,145,178,0.15); border: 1px solid rgba(8,145,178,0.35); color: var(--cyan); }
+  .pred-tag.color-red { background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.35); color: #f87171; }
+  .pred-tag.color-green { background: rgba(5,150,105,0.15); border: 1px solid rgba(5,150,105,0.35); color: #34d399; }
+  .pred-tag.color-violet { background: rgba(147,51,234,0.15); border: 1px solid rgba(147,51,234,0.35); color: #c084fc; }
+  .confidence-section { padding-top: 8px; border-top: 1px solid var(--border); }
+  .conf-label { font-size: 9px; color: var(--muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+  .conf-pct { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; color: var(--cyan); }
+  .conf-bar { height: 4px; background: var(--border2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .conf-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--cyan)); border-radius: 2px; transition: width 1s ease; }
+
+  /* LOADING OVERLAY */
+  .loading-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(3,3,15,0.88);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 10;
+  }
+  .loading-overlay.show { display: flex; }
+  .loader-text { font-family: 'Orbitron', sans-serif; font-size: 11px; color: var(--violet); margin-top: 10px; letter-spacing: 1px; }
+  .spin-ring {
+    width: 50px; height: 50px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--purple);
+    border-right-color: var(--violet);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* PRO TIP */
+  .pro-tip {
+    background: linear-gradient(90deg, rgba(91,33,182,0.1), rgba(37,99,235,0.06));
+    border: 1px solid rgba(91,33,182,0.22);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 14px;
+  }
+  .pro-tip-icon { font-size: 22px; }
+  .pro-tip-content { flex: 1; }
+  .pro-tip-title { font-size: 11px; font-weight: 700; color: var(--violet); margin-bottom: 3px; letter-spacing: 0.5px; }
+  .pro-tip-text { font-size: 11px; color: var(--muted); line-height: 1.4; font-weight: 600; }
+
+  /* BOTTOM STATS */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; margin-top: 14px;
+  }
+  .stat-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+    box-shadow: inset 0 1px 0 var(--shine);
+  }
+  .stat-item .s-icon {
+    width: 28px; height: 28px;
+    margin: 0 auto 8px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 0 6px rgba(109,40,217,0.6));
+  }
+  .stat-item .s-title { font-size: 10px; font-weight: 700; color: var(--violet); letter-spacing: 0.5px; }
+  .stat-item .s-desc { font-size: 9px; color: var(--muted); margin-top: 2px; line-height: 1.3; font-weight: 600; }
+
+  .footer { text-align: center; padding: 16px; font-size: 10px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 14px; font-weight: 600; }
+
+  /* HISTORY PAGE */
+  .hist-header { margin-bottom: 14px; }
+  .hist-title { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700; }
+  .hist-sub { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 600; }
+  .hist-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+  .hist-stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+  .hist-stat .h-num { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; }
+  .hist-stat .h-label { font-size: 10px; color: var(--muted); margin-top: 2px; font-weight: 600; }
+  .hist-table { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .hist-row {
+    display: grid; grid-template-columns: 1fr 90px 80px 60px;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .hist-row:last-child { border-bottom: none; }
+  .hist-row.header { background: rgba(91,33,182,0.08); font-weight: 700; font-size: 10px; color: var(--muted); letter-spacing: 0.5px; }
+  .badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-align: center; }
+  .badge.win { background: rgba(5,150,105,0.15); color: #34d399; border: 1px solid rgba(5,150,105,0.35); }
+  .badge.loss { background: rgba(220,38,38,0.15); color: #f87171; border: 1px solid rgba(220,38,38,0.35); }
+  .badge.pending { background: rgba(217,119,6,0.15); color: #fbbf24; border: 1px solid rgba(217,119,6,0.35); }
+
+  /* STATISTICS PAGE */
+  .stats-page-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .stat-card-title { font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; color: var(--violet); margin-bottom: 12px; letter-spacing: 0.5px; }
+  .num-freq-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; }
+  .num-freq-item { text-align: center; }
+  .num-freq-bar-wrap { height: 50px; display: flex; align-items: flex-end; justify-content: center; }
+  .num-freq-bar { width: 100%; border-radius: 3px 3px 0 0; transition: height 0.5s ease; }
+  .num-freq-label { font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .num-freq-count { font-size: 9px; color: var(--muted); font-weight: 600; }
+  .color-dist { display: flex; gap: 8px; }
+  .color-dist-item { flex: 1; text-align: center; }
+  .color-dist-num { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; }
+  .color-dist-label { font-size: 10px; color: var(--muted); margin-top: 2px; font-weight: 600; }
+  .color-dist-bar-wrap { height: 80px; display: flex; align-items: flex-end; justify-content: center; margin: 6px 0; }
+  .color-dist-bar { width: 30px; border-radius: 4px 4px 0 0; transition: height 0.5s ease; }
+  .streak-info { font-size: 12px; line-height: 2; font-weight: 600; }
+  .streak-info span { color: var(--violet); font-weight: 700; }
+
+  /* HOW IT WORKS */
+  .how-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .how-step { display: flex; gap: 12px; margin-bottom: 14px; }
+  .how-step:last-child { margin-bottom: 0; }
+  .how-step-num {
+    width: 28px; height: 28px; min-width: 28px;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
+    box-shadow: 0 0 12px rgba(91,33,182,0.4);
+  }
+  .how-step-content h3 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .how-step-content p { font-size: 11px; color: var(--muted); line-height: 1.5; font-weight: 600; }
+
+  /* DATA DOWNLOAD BTN */
+  .data-dl-btn {
+    position: fixed;
+    bottom: 16px; right: 16px;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    border: none; border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 10px; font-weight: 700;
+    color: white; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 4px 24px rgba(91,33,182,0.6);
+    z-index: 200;
+    transition: all 0.2s;
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.5px;
+  }
+  .data-dl-btn:hover { transform: scale(1.05); }
+
+  /* MINI CANVAS ANIMATIONS */
+  .mini-wave { display: inline-block; }
+  .analysis-card { position: relative; }
+
+  /* PERIOD DISPLAY */
+  .period-info {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(91,33,182,0.08);
+    border: 1px solid rgba(91,33,182,0.22);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 10px; color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .period-info strong { color: var(--violet); font-family: 'Share Tech Mono', monospace; }
+
+  /* SHEEN ANIMATION on cards */
+  @keyframes sheen {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  @media (max-width: 700px) {
+    :root { --sidebar: 0px; }
+    .sidebar { display: none; }
+    .topnav { left: 0; }
+    .main { margin-left: 0; }
+    .bottom-grid { grid-template-columns: 1fr; }
+    .stats-page-grid { grid-template-columns: 1fr; }
+    .hist-row { grid-template-columns: 1fr 80px 70px 50px; font-size: 10px; padding: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">C</div>
+    <div class="logo-text">UNIX<span>PREDICT</span></div>
+  </div>
+  <div class="sidebar-tool-info">
+    <div class="tool-icon">⚡</div>
+    <div class="tool-name">WINGO</div>
+    <div class="tool-sub">1 MIN PREDICTION TOOL</div>
+  </div>
+  <div class="nav-items">
+    <div class="nav-item active" onclick="showPage('home', this)">
+      <span class="nav-icon">🏠</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('history', this)">
+      <span class="nav-icon">🕐</span> History
+    </div>
+    <div class="nav-item" onclick="showPage('statistics', this)">
+      <span class="nav-icon">📊</span> Statistics
+    </div>
+    <div class="nav-item" onclick="window.open('https://t.me/Predict456','_blank')">
+      <span class="nav-icon">💬</span> Support
+    </div>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="secure-badge">
+      <div class="secure-dot"></div>
+      <div class="secure-text"><strong>SECURE &amp; SAFE</strong>Your data is 100% protected</div>
+    </div>
+  </div>
+</nav>
+
+<!-- TOP NAV -->
+<header class="topnav">
+  <div class="topnav-links">
+    <div class="topnav-link active" onclick="showPage('home', null, this)">Home</div>
+    <div class="topnav-link" onclick="showPage('howitworks', null, this)">How It Works</div>
+  </div>
+  <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- HOME PAGE -->
+  <div class="page active" id="page-home">
+    <!-- Hero -->
+    <div class="hero">
+      <img src="anime.png" alt="Anime Character" class="hero-img" onerror="this.style.background='linear-gradient(135deg,#0e0830,#060e20)';this.style.objectFit='none'">
+      <div class="hero-text">
+        <h1>PREDICT.<br><span class="hl">ANALYZE.</span><br>WIN.</h1>
+        <p>Smart Prediction for Smarter Wins.<span></span></p>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-card">
+      <div class="results-header">
+        <div class="results-title">📊 LAST 100 RESULTS</div>
+        <div class="view-history-btn" onclick="showPage('history', document.querySelector('.nav-item:nth-child(2)'))">VIEW HISTORY ▶</div>
+      </div>
+      <div class="period-info">Current Period: <strong id="currentPeriod">Loading...</strong></div>
+      <div class="results-scroll-wrap">
+        <div class="results-row" id="resultsRow">
+          <div style="color:var(--muted);font-size:11px;padding:10px">Loading results...</div>
+        </div>
+      </div>
+      <button class="predict-btn" id="predictBtn" onclick="startPrediction()">
+        <span class="btn-icon">⚡</span> PREDICT NEXT
+      </button>
+    </div>
+
+    <!-- AI Analysis + Prediction Result -->
+    <div class="bottom-grid">
+      <!-- AI Analysis -->
+      <div class="analysis-card">
+        <div class="loading-overlay" id="analysisLoader">
+          <div class="spin-ring"></div>
+          <div class="loader-text" id="loaderText">SCANNING PATTERNS...</div>
+        </div>
+        <div class="card-title">🤖 AI ANALYSIS</div>
+        <div class="analysis-step">
+          <img src="pattern.png" alt="Pattern" class="step-icon-img" onerror="this.style.display='none'">
+          <div class="step-info">
+            <div class="step-name">PATTERN SCANNING</div>
+            <div class="step-sub">Analyzing number patterns</div>
+          </div>
+          <canvas id="waveCanvas1" class="step-viz" width="60" height="18"></canvas>
+          <div class="step-check" id="check1">○</div>
+        </div>
+        <div class="analysis-step">
+          <img src="freq.png" alt="Frequency" class="step-icon-img" onerror="this.style.display='none'">
+          <div class="step-info">
+            <div class="step-name">FREQUENCY CHECK</div>
+            <div class="step-sub">Checking number frequency</div>
+          </div>
+          <canvas id="waveCanvas2" class="step-viz" width="60" height="18"></canvas>
+          <div class="step-check" id="check2">○</div>
+        </div>
+        <div class="analysis-step">
+          <img src="logic.png" alt="Logic" class="step-icon-img" onerror="this.style.display='none'">
+          <div class="step-info">
+            <div class="step-name">LOGIC PROCESSING</div>
+            <div class="step-sub">Running advanced algorithms</div>
+          </div>
+          <canvas id="waveCanvas3" class="step-viz" width="60" height="18"></canvas>
+          <div class="step-check" id="check3">○</div>
+        </div>
+        <div class="analysis-step">
+          <img src="infinite.png" alt="Infinite" class="step-icon-img" onerror="this.style.display='none'">
+          <div class="step-info">
+            <div class="step-name">INFINITY CALCULATION</div>
+            <div class="step-sub">Calculating possibilities</div>
+          </div>
+          <canvas id="waveCanvas4" class="step-viz" width="60" height="18"></canvas>
+          <div class="step-check" id="check4">○</div>
+        </div>
+        <div class="analysis-footer">
+          <div class="analysis-status">
+            <div class="status-dot"></div>
+            <span id="analysisStatusText">Analysis Complete</span>
+          </div>
+          <div class="progress-ring-wrap">
+            <svg class="progress-ring" width="42" height="42">
+              <circle cx="21" cy="21" r="17" fill="none" stroke="#1a1a3e" stroke-width="3"/>
+              <circle id="progressCircle" cx="21" cy="21" r="17" fill="none" stroke="url(#pg)" stroke-width="3"
+                stroke-dasharray="106.8" stroke-dashoffset="106.8" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#6d28d9"/>
+                  <stop offset="100%" stop-color="#0891b2"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="progress-pct" id="progressPct">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prediction Result -->
+      <div class="prediction-card">
+        <div class="card-title">⭐ PREDICTION RESULT</div>
+        <div class="prediction-placeholder" id="predPlaceholder">
+          <div style="font-size:30px">🎯</div>
+          <div>Click <b style="color:var(--violet)">PREDICT NEXT</b> to get prediction</div>
+        </div>
+        <div class="prediction-display" id="predDisplay">
+          <div class="pred-label">OUR PREDICTION</div>
+          <div class="pred-number-wrap">
+            <svg class="pred-ring-svg" viewBox="0 0 110 110">
+              <circle cx="55" cy="55" r="50" fill="none" stroke="url(#rg)" stroke-width="1.5" opacity="0.5"/>
+              <circle cx="55" cy="55" r="40" fill="none" stroke="url(#rg)" stroke-width="0.8" stroke-dasharray="4 4" opacity="0.4">
+                <animateTransform attributeName="transform" type="rotate" from="0 55 55" to="360 55 55" dur="8s" repeatCount="indefinite"/>
+              </circle>
+              <defs>
+                <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#6d28d9"/>
+                  <stop offset="100%" stop-color="#0891b2"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="pred-ring-inner">
+              <div class="pred-num-display" id="predNumber">4</div>
+            </div>
+          </div>
+          <div class="pred-details">
+            <div class="pred-tag size" id="predSize" style="display:none">BIG</div>
+            <div class="pred-tag color-red" id="predColor" style="display:none">RED</div>
+            <div class="pred-tag" id="predFinalTag" style="display:none">SMALL</div>
+          </div>
+          <div id="predReasonBox" style="display:none;margin:6px 0 2px;text-align:center">
+            <div id="predReasonText" style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:0.5px;padding:4px 8px;background:rgba(109,40,217,0.08);border-radius:6px;border:1px solid rgba(109,40,217,0.2)"></div>
+          </div>
+          <div id="lossAlertBox" style="display:none;margin:6px 0 2px">
+            <div style="background:rgba(220,38,38,0.13);border:1px solid rgba(220,38,38,0.4);border-radius:8px;padding:7px 10px;text-align:center">
+              <div style="font-size:10px;color:#f87171;font-weight:700;letter-spacing:0.5px">⚠️ LOSS DETECTED — SURESHOT MODE</div>
+              <div id="lossReasonText" style="font-size:9px;color:var(--muted);margin-top:3px;font-weight:600;line-height:1.4"></div>
+            </div>
+          </div>
+          <div class="confidence-section">
+            <div class="conf-label">CONFIDENCE LEVEL</div>
+            <div class="conf-pct" id="confPct">0%</div>
+            <div class="conf-bar"><div class="conf-fill" id="confFill" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pro Tip -->
+    <div class="pro-tip">
+      <span class="pro-tip-icon">💡</span>
+      <div class="pro-tip-content">
+        <div class="pro-tip-title">PRO TIP</div>
+        <div class="pro-tip-text">UNIX Predict uses advanced AI algorithms to analyze patterns, frequency, cycles, and mathematical probabilities to give you accurate predictions.</div>
+      </div>
+      <span style="font-size:24px">🎯</span>
+    </div>
+
+    <!-- Advanced Analysis Panel -->
+    <div id="advancedAnalysisPanel" style="display:none;margin-top:14px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:inset 0 1px 0 var(--shine)">
+        <div class="card-title" style="margin-bottom:10px">🧠 ADVANCED ANALYSIS REPORT</div>
+        <div id="advAnalysisContent" style="font-size:11px;line-height:1.8;color:var(--text);font-weight:600"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Stats -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <img src="secur.png" alt="Secure" class="s-icon" onerror="this.outerHTML='<div class=\'s-icon\' style=\'font-size:20px;margin:0 auto 8px\'>🛡️</div>'">
+        <div class="s-title">100% SECURE</div>
+        <div class="s-desc">Your privacy is our top priority.</div>
+      </div>
+      <div class="stat-item">
+        <img src="real.png" alt="Real Time" class="s-icon" onerror="this.outerHTML='<div class=\'s-icon\' style=\'font-size:20px;margin:0 auto 8px\'>⚡</div>'">
+        <div class="s-title">REAL-TIME ANALYSIS</div>
+        <div class="s-desc">1 Min real-time prediction engine.</div>
+      </div>
+      <div class="stat-item">
+        <img src="high.png" alt="High Accuracy" class="s-icon" onerror="this.outerHTML='<div class=\'s-icon\' style=\'font-size:20px;margin:0 auto 8px\'>⭐</div>'">
+        <div class="s-title">HIGH ACCURACY</div>
+        <div class="s-desc">Advanced AI for better winning chances.</div>
+      </div>
+    </div>
+    <div class="footer">© 2024 UNIX Predict. All Rights Reserved. &nbsp;|&nbsp; Made with ❤️ and Code</div>
+  </div>
+
+  <!-- HISTORY PAGE -->
+  <div class="page" id="page-history">
+    <div class="hist-header">
+      <div class="hist-title">Prediction History</div>
+      <div class="hist-sub">All your past predictions and results</div>
+    </div>
+    <div class="hist-stats">
+      <div class="hist-stat">
+        <div class="h-num" id="histTotal" style="color:var(--violet)">0</div>
+        <div class="h-label">Total Predictions</div>
+      </div>
+      <div class="hist-stat">
+        <div class="h-num" id="histWins" style="color:var(--green)">0</div>
+        <div class="h-label">Wins ✅</div>
+      </div>
+      <div class="hist-stat">
+        <div class="h-num" id="histLosses" style="color:var(--red)">0</div>
+        <div class="h-label">Losses ❌</div>
+      </div>
+    </div>
+    <!-- Win Rate Bar -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:700">
+        <span>WIN RATE</span><span id="histWinRate" style="color:var(--violet)">0%</span>
+      </div>
+      <div style="height:8px;background:var(--border2);border-radius:4px;overflow:hidden">
+        <div id="histWinRateBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:4px;transition:width 0.8s ease"></div>
+      </div>
+      <div id="histStreakText" style="font-size:10px;color:var(--muted);margin-top:6px;font-weight:600;text-align:center"></div>
+    </div>
+    <div class="hist-table">
+      <div class="hist-row header">
+        <div>PERIOD</div>
+        <div>PREDICTION</div>
+        <div>ACTUAL</div>
+        <div>RESULT</div>
+      </div>
+      <div id="histTableBody">
+        <div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">No predictions yet. Click PREDICT NEXT to start!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATISTICS PAGE -->
+  <div class="page" id="page-statistics">
+    <div class="hist-header">
+      <div class="hist-title">Game Statistics</div>
+      <div class="hist-sub">Live analysis of last 100 results</div>
+    </div>
+    <div class="stats-page-grid">
+      <div class="stat-card" style="grid-column:1/-1">
+        <div class="stat-card-title">NUMBER FREQUENCY (LAST 100)</div>
+        <div class="num-freq-grid" id="numFreqGrid">
+          <div style="color:var(--muted);font-size:11px">Loading...</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">COLOR DISTRIBUTION</div>
+        <div class="color-dist" id="colorDist">
+          <div style="color:var(--muted);font-size:11px">Loading...</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">SIZE DISTRIBUTION</div>
+        <div id="sizeDist" style="font-size:12px;color:var(--muted)">Loading...</div>
+      </div>
+      <div class="stat-card" style="grid-column:1/-1">
+        <div class="stat-card-title">STREAK &amp; TREND ANALYSIS</div>
+        <div class="streak-info" id="streakInfo">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS PAGE -->
+  <div class="page" id="page-howitworks">
+    <div class="hist-header">
+      <div class="hist-title">How It Works</div>
+      <div class="hist-sub">Step-by-step guide to using UNIX Predict</div>
+    </div>
+    <div class="how-section">
+      <div class="how-step">
+        <div class="how-step-num">1</div>
+        <div class="how-step-content">
+          <h3>Open the Dashboard</h3>
+          <p>When you open UNIX Predict, the tool automatically loads the last 100 WinGo 1-Min results from the live server. These results are updated every 5 seconds in real-time.</p>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">2</div>
+        <div class="how-step-content">
+          <h3>Watch the Results Bar</h3>
+          <p>The scrollable results bar shows all 100 past results. Old results are on the LEFT, newest results appear on the RIGHT. When a new result comes in, it slides in from the right automatically.</p>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">3</div>
+        <div class="how-step-content">
+          <h3>Click PREDICT NEXT</h3>
+          <p>Press the ⚡ PREDICT NEXT button. The AI will take 5-10 seconds to run 4 analysis engines: Pattern Scanning, Frequency Check, Logic Processing, and Infinity Calculation. Wait for all 4 to complete.</p>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">4</div>
+        <div class="how-step-content">
+          <h3>Read the Prediction</h3>
+          <p>The result panel shows your predicted NUMBER (e.g., 4), SIZE (Big/Small), and COLOR (Red/Green/Violet). The number shown is the most likely outcome. Below it you see the size and color tags. Confidence % shows how strong the signal is.</p>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">5</div>
+        <div class="how-step-content">
+          <h3>Place Your Bet Smartly</h3>
+          <p>Use the prediction to make your bet on the WinGo 1-Min game. Always start with the minimum bet amount and increase only if you are confident. Never bet more than you can afford to lose.</p>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">6</div>
+        <div class="how-step-content">
+          <h3>Track Your Results</h3>
+          <p>Go to the History page to see all your past predictions, whether they were WIN or LOSS, and how accurate the tool has been over time. Use the Statistics page to understand patterns better.</p>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">7</div>
+        <div class="how-step-content">
+          <h3>Download Analysis Data</h3>
+          <p>Click the small 📥 DATA button (bottom right corner) to download the complete pattern analysis chart in JSON format. Useful for advanced users who want to study patterns further.</p>
+        </div>
+      </div>
+    </div>
+    <div class="how-section">
+      <div class="stat-card-title" style="font-family:'Orbitron',sans-serif;font-size:11px;color:var(--violet);margin-bottom:10px">⚠️ IMPORTANT DISCLAIMER</div>
+      <p style="font-size:11px;color:var(--muted);line-height:1.6;font-weight:600">UNIX Predict is a pattern analysis tool. Predictions are based on historical data and mathematical analysis. No prediction tool can guarantee 100% accuracy. Use responsibly and always gamble within your limits. For support, join us on Telegram: <a href="https://t.me/Predict456" style="color:var(--violet)" target="_blank">t.me/Predict456</a></p>
+    </div>
+  </div>
+
+</main>
+
+<!-- DATA DOWNLOAD BUTTON -->
+<button class="data-dl-btn" onclick="downloadAnalysisData()" title="Download Analysis Chart Data">
+  📥 DATA
+</button>
+
+<script>
+// ===================== CONSTANTS =====================
+const API_URL = 'https://wingolast100.vercel.app/api/results?typeId=1&apiKey=12a04165-748c-4144-9398-96bd2e0ad956&token=1a97a413-ff57-4097-a44c-4bd402ace8d5&limit=100';
+const REFRESH_INTERVAL = 5000;
+
+// Number rules:
+// 0 - small, red+violet  -> violet class, num-small
+// 1 - small, green       -> green class,  num-small
+// 2 - small, red         -> red class,    num-small
+// 3 - small, green       -> green class,  num-small
+// 4 - small, red         -> red class,    num-small
+// 5 - big,   green+violet-> violet class, num-big   (green-violet)
+// 6 - big,   red         -> red class,    num-big
+// 7 - big,   green       -> green class,  num-big
+// 8 - big,   red         -> red class,    num-big
+// 9 - big,   green       -> green class,  num-big
+const COLOR_MAP = { 0:'red-violet', 1:'green', 2:'red', 3:'green', 4:'red', 5:'green-violet', 6:'red', 7:'green', 8:'red', 9:'green' };
+const SIZE_MAP  = { 0:'Small',1:'Small',2:'Small',3:'Small',4:'Small',5:'Big',6:'Big',7:'Big',8:'Big',9:'Big' };
+
+let allResults = [];
+let predictionHistory = JSON.parse(localStorage.getItem('unixPredHistory') || '[]');
+let lastAnalysisData = null;
+let isAnalyzing = false;
+let waveAnimFrames = [];
+
+// ===================== PAGE NAV =====================
+function showPage(name, navEl, topEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.topnav-link').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  if (topEl) topEl.classList.add('active');
+  if (name === 'home') {
+    document.querySelector('.topnav-link').classList.add('active');
+    document.querySelector('.nav-item').classList.add('active');
+  }
+  if (name === 'history') renderHistory();
+  if (name === 'statistics') renderStatistics();
+}
+
+// ===================== FETCH API =====================
+async function fetchResults() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    let results = [];
+    if (Array.isArray(data)) results = data;
+    else if (data.data && Array.isArray(data.data)) results = data.data;
+    else if (data.data && Array.isArray(data.data.list)) results = data.data.list;
+    else if (data.results) results = data.results;
+    else if (data.list) results = data.list;
+    
+    if (results.length > 0) {
+      results = results.map(r => ({
+        issueNumber: r.issueNumber || r.period || r.issue || r.id || '',
+        number: parseInt(r.number ?? r.num ?? r.result ?? 0),
+        colour: (r.colour || r.color || r.Color || '').toLowerCase(),
+        size: (r.size || r.Size || '').toLowerCase()
+      }));
+      
+      if (results.length >= 2) {
+        const first = String(results[0].issueNumber);
+        const last = String(results[results.length-1].issueNumber);
+        if (first > last) results.reverse();
+      }
+      
+      const prevLast = allResults.length ? allResults[allResults.length-1].issueNumber : null;
+      allResults = results;
+      
+      const latestPeriod = results[results.length-1]?.issueNumber;
+      if (latestPeriod) document.getElementById('currentPeriod').textContent = latestPeriod;
+      
+      const newLast = results[results.length-1]?.issueNumber;
+      const isNew = prevLast && newLast !== prevLast;
+      
+      renderResults(isNew);
+      checkPendingPredictions();
+    }
+  } catch(e) {
+    console.error('API fetch error:', e);
+  }
+}
+
+// ===================== RENDER RESULTS =====================
+function getNumClass(n) {
+  const c = COLOR_MAP[n] || 'green';
+  if (c.includes('violet') && c.includes('red')) return 'violet';
+  if (c.includes('violet')) return 'violet';
+  if (c.includes('red')) return 'red';
+  return 'green';
+}
+
+// Returns 'num-small' or 'num-big' based on number
+function getSizeClass(n) {
+  return SIZE_MAP[n] === 'Big' ? 'num-big' : 'num-small';
+}
+
+function renderResults(hasNew) {
+  const row = document.getElementById('resultsRow');
+  row.innerHTML = '';
+  allResults.forEach((r, i) => {
+    const isNewest = i === allResults.length - 1;
+    const item = document.createElement('div');
+    item.className = 'result-item';
+    const numDiv = document.createElement('div');
+    // Apply both color class and size class
+    numDiv.className = 'result-num ' + getNumClass(r.number) + ' ' + getSizeClass(r.number) + (isNewest && hasNew ? ' newest' : '');
+    numDiv.textContent = r.number;
+    const idxDiv = document.createElement('div');
+    idxDiv.className = 'result-idx';
+    idxDiv.textContent = '#' + (i+1);
+    item.appendChild(idxDiv);
+    item.appendChild(numDiv);
+    row.appendChild(item);
+  });
+  row.parentElement.scrollLeft = row.parentElement.scrollWidth;
+}
+
+// ===================== WAVE CANVAS ANIMATIONS =====================
+function drawWave(canvas, color, phase) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  for (let x=0; x<w; x++) {
+    const y = h/2 + Math.sin((x/w)*Math.PI*3 + phase) * (h/2-2);
+    x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+function drawBar(canvas, color, phase) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const bars = 7;
+  const bw = w/bars - 1;
+  for (let i=0; i<bars; i++) {
+    const bh = (Math.sin(i*0.8 + phase)*0.4 + 0.6) * (h-2);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.7;
+    ctx.fillRect(i*(bw+1), h-bh-1, bw, bh);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawDots(canvas, color, phase) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const dots = 5;
+  for(let i=0;i<dots;i++) {
+    const x = (i/(dots-1))*w;
+    const r = 2 + Math.sin(i*1.2+phase)*1.5;
+    ctx.beginPath(); ctx.arc(x,h/2,Math.max(1,r),0,Math.PI*2);
+    ctx.fillStyle=color; ctx.globalAlpha=0.8; ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+let phase = 0;
+function animateCanvases() {
+  phase += 0.08;
+  drawWave(document.getElementById('waveCanvas1'), '#7c3aed', phase);
+  drawBar(document.getElementById('waveCanvas2'), '#2563eb', phase);
+  drawDots(document.getElementById('waveCanvas3'), '#9333ea', phase);
+  const c4 = document.getElementById('waveCanvas4');
+  const ctx = c4.getContext('2d');
+  ctx.clearRect(0,0,60,18);
+  ctx.beginPath();
+  ctx.strokeStyle='#0891b2'; ctx.lineWidth=1.5;
+  for(let x=0;x<60;x++){
+    const y=9+Math.cos((x/60)*Math.PI*4+phase)*5;
+    x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  requestAnimationFrame(animateCanvases);
+}
+
+// ===================== PREDICTION ENGINE =====================
+function getColorFromNum(n) {
+  return COLOR_MAP[n] || 'green';
+}
+function getSizeFromNum(n) {
+  return SIZE_MAP[n] || 'Big';
+}
+
+function runPredictionEngine(results) {
+  const last = [...results].reverse();
+  const last20 = last.slice(0,20);
+  const last10 = last.slice(0,10);
+
+  const numbers = last.map(r=>r.number);
+  const sizes = last.map(r=>getSizeFromNum(r.number));
+  const colors = last.map(r=>getColorFromNum(r.number));
+
+  const numFreq = Array(10).fill(0);
+  numbers.forEach(n=>numFreq[n]++);
+  const avgFreq = 10;
+
+  const colFreq = {red:0, green:0, violet:0};
+  colors.forEach(c=>{
+    if(c.includes('red')) colFreq.red++;
+    if(c.includes('green')) colFreq.green++;
+    if(c.includes('violet')) colFreq.violet++;
+  });
+
+  const sizeFreq = {Big:0,Small:0};
+  sizes.forEach(s=>sizeFreq[s]++);
+
+  let colorStreak=1, colorStreakVal=colors[0];
+  for(let i=1;i<colors.length;i++){
+    if(colors[i]===colorStreakVal) colorStreak++;
+    else break;
+  }
+  let sizeStreak=1, sizeStreakVal=sizes[0];
+  for(let i=1;i<sizes.length;i++){
+    if(sizes[i]===sizeStreakVal) sizeStreak++;
+    else break;
+  }
+
+  let altColorScore=0;
+  for(let i=0;i<Math.min(10,colors.length-1);i++){
+    const c1=colors[i].includes('red')?'r':'g';
+    const c2=colors[i+1].includes('red')?'r':'g';
+    if(c1!==c2) altColorScore++;
+  }
+  const isAltPattern = altColorScore >= 7;
+
+  let altSizeScore=0;
+  for(let i=0;i<Math.min(10,sizes.length-1);i++){
+    if(sizes[i]!==sizes[i+1]) altSizeScore++;
+  }
+  const isAltSizePattern = altSizeScore >= 7;
+
+  const recentRed = last10.filter(r=>getColorFromNum(r.number).includes('red')).length;
+  const recentGreen = last10.filter(r=>getColorFromNum(r.number).includes('green')).length;
+
+  let predColor;
+  if(colorStreak >= 4) {
+    predColor = colorStreakVal.includes('red') ? 'green' : 'red';
+  } else if(isAltPattern) {
+    predColor = colors[0].includes('red') ? 'red' : 'green';
+  } else {
+    if(recentRed > 6) predColor = 'green';
+    else if(recentGreen > 6) predColor = 'red';
+    else predColor = colFreq.red > colFreq.green ? 'green' : 'red';
+  }
+
+  const recentBig = last10.filter(r=>getSizeFromNum(r.number)==='Big').length;
+  const recentSmall = 10-recentBig;
+
+  let predSize;
+  if(sizeStreak >= 4) {
+    predSize = sizeStreakVal==='Big'?'Small':'Big';
+  } else if(isAltSizePattern) {
+    predSize = sizes[0]==='Big'?'Big':'Small';
+  } else {
+    if(recentBig > 6) predSize='Small';
+    else if(recentSmall > 6) predSize='Big';
+    else predSize=sizeFreq.Big>sizeFreq.Small?'Small':'Big';
+  }
+
+  const matching = [];
+  for(let n=0;n<=9;n++){
+    const nc=getColorFromNum(n); const ns=getSizeFromNum(n);
+    const sizeMatch=ns===predSize;
+    const colorMatch=predColor==='red'?nc.includes('red'):nc.includes('green');
+    if(sizeMatch && colorMatch) matching.push(n);
+  }
+
+  let candidates = matching.length>0 ? matching : [predSize==='Small'?[0,1,2,3,4]:[5,6,7,8,9]][0];
+
+  const recentFreq = Array(10).fill(0);
+  last20.forEach(r=>recentFreq[r.number]++);
+
+  const lastSeen = Array(10).fill(999);
+  for(let i=0;i<last.length;i++) lastSeen[last[i].number]=Math.min(lastSeen[last[i].number],i);
+
+  let bestNum = candidates[0], bestScore = -Infinity;
+  for(const n of candidates){
+    const freqScore = (avgFreq - recentFreq[n]) * 2;
+    const coldScore = Math.min(lastSeen[n]/20, 3);
+    const score = freqScore + coldScore + (Math.random()*0.5);
+    if(score > bestScore){ bestScore=score; bestNum=n; }
+  }
+
+  let confidence = 55;
+  if(colorStreak >= 3) confidence += 8;
+  if(sizeStreak >= 3) confidence += 8;
+  if(isAltPattern) confidence += 5;
+  if(recentFreq[bestNum] < 2) confidence += 7;
+  if(matching.length > 0) confidence += 5;
+  confidence = Math.min(94, Math.max(58, confidence + (Math.random()*6-3)));
+
+  const finalColor = getColorFromNum(bestNum);
+  const finalSize = getSizeFromNum(bestNum);
+
+  return {
+    number: bestNum,
+    size: finalSize,
+    color: finalColor.includes('violet') ? finalColor : (finalColor.includes('red')?'red':'green'),
+    confidence: Math.round(confidence),
+    analysis: {
+      numFreq, colFreq, sizeFreq,
+      colorStreak, sizeStreak, colorStreakVal, sizeStreakVal,
+      isAltPattern, isAltSizePattern,
+      recentRed, recentGreen, recentBig, recentSmall,
+      predColorLogic: colorStreak>=4?'Manipulation Trap Detected':isAltPattern?'Alt Pattern Break':'Frequency Regression',
+      predSizeLogic: sizeStreak>=4?'Streak Reversal':isAltSizePattern?'Alt Pattern Break':'Frequency Regression',
+      coldNumber: bestNum, coldScore: recentFreq[bestNum],
+      matchingCandidates: matching
+    }
+  };
+}
+
+// ===================== START PREDICTION =====================
+function startPrediction() {
+  if(isAnalyzing) return;
+  if(allResults.length < 10){ alert('Wait for results to load...'); return; }
+  isAnalyzing = true;
+
+  const btn = document.getElementById('predictBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="btn-icon">⏳</span> ANALYZING...';
+
+  ['check1','check2','check3','check4'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.textContent='○'; el.className='step-check';
+  });
+  setProgress(0);
+  document.getElementById('predDisplay').style.display='none';
+  document.getElementById('predPlaceholder').style.display='flex';
+  document.getElementById('analysisStatusText').textContent='Scanning...';
+
+  const loaderMsgs = ['SCANNING PATTERNS...','CHECKING FREQUENCY...','PROCESSING LOGIC...','INFINITE CALC...'];
+  const loaderEl = document.getElementById('loaderText');
+  const overlay = document.getElementById('analysisLoader');
+  overlay.classList.add('show');
+
+  const totalTime = 6000 + Math.random()*3000;
+  const stepTime = totalTime/4;
+
+  function completeStep(n) {
+    const checkEl = document.getElementById('check'+n);
+    checkEl.textContent='✓'; checkEl.className='step-check done';
+    setProgress(n*25);
+    if(n<4) {
+      loaderEl.textContent = loaderMsgs[n];
+      document.getElementById('check'+(n+1)).className='step-check loading';
+      document.getElementById('check'+(n+1)).textContent='◌';
+    }
+  }
+
+  document.getElementById('check1').className='step-check loading';
+  document.getElementById('check1').textContent='◌';
+
+  setTimeout(()=>completeStep(1), stepTime*0.8);
+  setTimeout(()=>completeStep(2), stepTime*1.8);
+  setTimeout(()=>completeStep(3), stepTime*2.8);
+  setTimeout(()=>{
+    completeStep(4);
+    overlay.classList.remove('show');
+    document.getElementById('analysisStatusText').textContent='Analysis Complete';
+    setProgress(100);
+
+    const pred = runPredictionEngine(allResults);
+    lastAnalysisData = pred.analysis;
+    showPrediction(pred);
+    savePrediction(pred);
+    showAdvancedAnalysis(pred);
+
+    isAnalyzing = false;
+    btn.disabled = false;
+    btn.innerHTML = '<span class="btn-icon">⚡</span> PREDICT NEXT';
+  }, totalTime);
+}
+
+function setProgress(pct) {
+  const circ = document.getElementById('progressCircle');
+  const circumference = 2 * Math.PI * 17;
+  circ.style.strokeDashoffset = circumference - (pct/100)*circumference;
+  document.getElementById('progressPct').textContent = pct+'%';
+}
+
+function showPrediction(pred) {
+  document.getElementById('predPlaceholder').style.display='none';
+  const display = document.getElementById('predDisplay');
+  display.style.display='block';
+
+  document.getElementById('predNumber').textContent = pred.number;
+
+  // Hide old separate tags
+  document.getElementById('predSize').style.display='none';
+  document.getElementById('predColor').style.display='none';
+
+  // Determine SINGLE best tag based on system analysis
+  const finalTag = document.getElementById('predFinalTag');
+  finalTag.style.display='inline-block';
+
+  // System decides: show size (Small/Big) or color (Red/Green) based on confidence signal
+  // Size signal is stronger when sizeStreak >= 3 or recentBig/Small > 6
+  // Color signal is stronger when colorStreak >= 3 or recentRed/Green > 6
+  const a = pred.analysis;
+  const sizeSignal = (a.sizeStreak >= 3 ? 3 : 0) + (a.recentBig > 6 || a.recentSmall > 6 ? 2 : 0) + (a.isAltSizePattern ? 1 : 0);
+  const colorSignal = (a.colorStreak >= 3 ? 3 : 0) + (a.recentRed > 6 || a.recentGreen > 6 ? 2 : 0) + (a.isAltPattern ? 1 : 0);
+
+  let finalLabel, finalClass, reasonText;
+
+  // Check if last prediction was a loss → sureshot mode
+  const lastPH = predictionHistory.find(p=>p.result==='loss' || p.result==='pending');
+  const inSureshotMode = lastPH && lastPH.result === 'loss' && predictionHistory[0] && predictionHistory[0].result === 'loss';
+
+  if (inSureshotMode) {
+    // In sureshot mode → always show size as it's more controllable
+    finalLabel = pred.size.toUpperCase();
+    finalClass = 'pred-tag ' + (pred.size === 'Big' ? 'size' : 'size-small');
+    reasonText = '🔥 SURESHOT: ' + pred.analysis.predSizeLogic;
+    document.getElementById('lossAlertBox').style.display='block';
+    document.getElementById('lossReasonText').textContent = getLossReason(a);
+  } else {
+    document.getElementById('lossAlertBox').style.display='none';
+    if (sizeSignal >= colorSignal) {
+      finalLabel = pred.size.toUpperCase();
+      finalClass = pred.size === 'Big' ? 'pred-tag size' : 'pred-tag size-small';
+      reasonText = '📊 Size Signal Stronger — ' + a.predSizeLogic;
+    } else {
+      const col = pred.color;
+      if (col.includes('red')) {
+        finalLabel = 'RED'; finalClass = 'pred-tag color-red';
+      } else if (col.includes('green')) {
+        finalLabel = 'GREEN'; finalClass = 'pred-tag color-green';
+      } else if (col.includes('violet')) {
+        finalLabel = col.includes('red') ? 'RED+VIOLET' : 'GREEN+VIOLET'; finalClass = 'pred-tag color-violet';
+      } else {
+        finalLabel = 'GREEN'; finalClass = 'pred-tag color-green';
+      }
+      reasonText = '🎨 Color Signal Stronger — ' + a.predColorLogic;
+    }
+  }
+
+  finalTag.textContent = finalLabel;
+  finalTag.className = finalClass;
+  document.getElementById('predReasonBox').style.display='block';
+  document.getElementById('predReasonText').textContent = reasonText;
+
+  const conf = inSureshotMode ? Math.min(96, pred.confidence + 8) : pred.confidence;
+  document.getElementById('confPct').textContent = conf+'%';
+  setTimeout(()=>{document.getElementById('confFill').style.width=conf+'%';},100);
+}
+
+function getLossReason(a) {
+  const reasons = [];
+  if (a.colorStreak >= 3) reasons.push('Color streak ' + a.colorStreak + 'x detected — reversal expected');
+  if (a.sizeStreak >= 3) reasons.push('Size streak ' + a.sizeStreak + 'x detected — reversal expected');
+  if (a.recentRed > 6) reasons.push('Red dominated last 10 (' + a.recentRed + '/10) — green likely');
+  if (a.recentGreen > 6) reasons.push('Green dominated last 10 (' + a.recentGreen + '/10) — red likely');
+  if (a.recentBig > 6) reasons.push('Big dominated last 10 (' + a.recentBig + '/10) — small likely');
+  if (a.recentSmall > 6) reasons.push('Small dominated last 10 (' + a.recentSmall + '/10) — big likely');
+  if (a.isAltPattern) reasons.push('Alternating color pattern active');
+  if (a.isAltSizePattern) reasons.push('Alternating size pattern active');
+  if (!reasons.length) reasons.push('Frequency regression applied — cold number selected');
+  return '🔍 ' + reasons[0];
+}
+
+// ===================== HISTORY =====================
+function savePrediction(pred) {
+  const latestResult = allResults[allResults.length-1];
+  const period = latestResult ? String(BigInt(latestResult.issueNumber||0)+1n) : 'N/A';
+
+  // Determine which single tag was shown (same logic as showPrediction)
+  const a = pred.analysis;
+  const sizeSignal = (a.sizeStreak >= 3 ? 3 : 0) + (a.recentBig > 6 || a.recentSmall > 6 ? 2 : 0) + (a.isAltSizePattern ? 1 : 0);
+  const colorSignal = (a.colorStreak >= 3 ? 3 : 0) + (a.recentRed > 6 || a.recentGreen > 6 ? 2 : 0) + (a.isAltPattern ? 1 : 0);
+
+  const lastPH = predictionHistory[0];
+  const inSureshotMode = lastPH && lastPH.result === 'loss';
+
+  let displayedTag, tagType;
+  if (inSureshotMode || sizeSignal >= colorSignal) {
+    displayedTag = pred.size; // 'Big' or 'Small'
+    tagType = 'size';
+  } else {
+    const col = pred.color;
+    displayedTag = col.includes('red') ? 'red' : col.includes('green') ? 'green' : 'green';
+    tagType = 'color';
+  }
+
+  predictionHistory.unshift({
+    id: Date.now(),
+    period: period,
+    predicted: { number: pred.number, size: pred.size, color: pred.color, displayedTag, tagType },
+    actual: null,
+    result: 'pending',
+    timestamp: new Date().toISOString()
+  });
+
+  if(predictionHistory.length > 100) predictionHistory = predictionHistory.slice(0,100);
+  localStorage.setItem('unixPredHistory', JSON.stringify(predictionHistory));
+}
+
+function checkPendingPredictions() {
+  if(!predictionHistory.length) return;
+  let changed = false;
+  predictionHistory.forEach(ph=>{
+    if(ph.result!=='pending') return;
+    const actual = allResults.find(r=>String(r.issueNumber)===String(ph.period));
+    if(actual) {
+      const actualSize = getSizeFromNum(actual.number);
+      const actualColor = getColorFromNum(actual.number);
+      ph.actual = { number: actual.number, size: actualSize, color: actualColor };
+
+      // Match based on what tag was shown
+      let match = false;
+      if (ph.predicted.tagType === 'size') {
+        match = actualSize === ph.predicted.displayedTag;
+      } else {
+        // color match
+        const predC = ph.predicted.displayedTag; // 'red' or 'green'
+        match = predC === 'red' ? actualColor.includes('red') : actualColor.includes('green');
+      }
+      ph.result = match ? 'win' : 'loss';
+      changed = true;
+    }
+  });
+  if(changed) {
+    localStorage.setItem('unixPredHistory', JSON.stringify(predictionHistory));
+    if(document.getElementById('page-history').classList.contains('active')) renderHistory();
+  }
+}
+
+function renderHistory() {
+  const wins = predictionHistory.filter(p=>p.result==='win').length;
+  const losses = predictionHistory.filter(p=>p.result==='loss').length;
+  const total = predictionHistory.length;
+  document.getElementById('histTotal').textContent = total;
+  document.getElementById('histWins').textContent = wins;
+  document.getElementById('histLosses').textContent = losses;
+
+  const winRate = total > 0 ? Math.round((wins/total)*100) : 0;
+  document.getElementById('histWinRate').textContent = winRate + '%';
+  setTimeout(()=>{document.getElementById('histWinRateBar').style.width = winRate+'%';},200);
+
+  // Streak text
+  let streak = 0, streakType = '';
+  for (let i=0; i<predictionHistory.length; i++) {
+    if (predictionHistory[i].result === 'pending') continue;
+    if (i === 0) { streakType = predictionHistory[i].result; streak = 1; }
+    else if (predictionHistory[i].result === streakType) streak++;
+    else break;
+  }
+  document.getElementById('histStreakText').textContent = streak > 1 ? (streakType === 'win' ? '🔥 ' : '❄️ ') + streak + 'x ' + streakType.toUpperCase() + ' STREAK' : '';
+
+  const tbody = document.getElementById('histTableBody');
+  if(!predictionHistory.length) {
+    tbody.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">No predictions yet. Click PREDICT NEXT to start!</div>';
+    return;
+  }
+
+  tbody.innerHTML = predictionHistory.map(p=>{
+    const shortPeriod = String(p.period).slice(-6);
+
+    // Prediction tag
+    let predTagHtml;
+    if (p.predicted.tagType === 'size' || !p.predicted.tagType) {
+      const sz = p.predicted.displayedTag || p.predicted.size;
+      predTagHtml = sz === 'Big'
+        ? `<span style="color:#60a5fa;font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px">BIG</span>`
+        : `<span style="color:var(--cyan);font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px">SMALL</span>`;
+    } else {
+      const c = p.predicted.displayedTag;
+      predTagHtml = c === 'red'
+        ? `<span style="color:#f87171;font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px">RED</span>`
+        : `<span style="color:#34d399;font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px">GREEN</span>`;
+    }
+
+    // Actual result tag
+    let actualHtml;
+    if (p.actual) {
+      const s = p.actual.size;
+      const c = p.actual.color;
+      actualHtml = s === 'Big'
+        ? `<span style="color:#60a5fa;font-weight:700">${p.actual.number} BIG</span>`
+        : `<span style="color:var(--cyan);font-weight:700">${p.actual.number} SML</span>`;
+    } else {
+      actualHtml = '<span style="color:var(--muted)">—</span>';
+    }
+
+    const badge = p.result==='win'
+      ? '<span class="badge win">✅ WIN</span>'
+      : p.result==='loss'
+      ? '<span class="badge loss">❌ LOSS</span>'
+      : '<span class="badge pending">⏳</span>';
+
+    const rowStyle = p.result==='loss' ? 'background:rgba(220,38,38,0.05);' : p.result==='win' ? 'background:rgba(5,150,105,0.04);' : '';
+
+    return `<div class="hist-row" style="${rowStyle}">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)">#${shortPeriod}</div>
+      <div>${predTagHtml}</div>
+      <div>${actualHtml}</div>
+      <div>${badge}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===================== STATISTICS =====================
+function renderStatistics() {
+  if(!allResults.length) return;
+  const last = [...allResults].reverse();
+
+  const numFreq = Array(10).fill(0);
+  allResults.forEach(r=>numFreq[r.number]++);
+  const maxFreq = Math.max(...numFreq);
+
+  const grid = document.getElementById('numFreqGrid');
+  grid.innerHTML = Array.from({length:10},(_,n)=>{
+    const cls = getNumClass(n);
+    const colors = {red:'var(--red)',green:'var(--green)',violet:'var(--violet)'};
+    const col = colors[cls]||'var(--purple)';
+    const pct = (numFreq[n]/maxFreq)*100;
+    return `<div class="num-freq-item">
+      <div class="num-freq-bar-wrap"><div class="num-freq-bar" style="height:${pct}%;background:${col};width:100%"></div></div>
+      <div class="num-freq-label" style="color:${col}">${n}</div>
+      <div class="num-freq-count">${numFreq[n]}x</div>
+    </div>`;
+  }).join('');
+
+  const colFreq = {red:0,green:0,violet:0};
+  allResults.forEach(r=>{
+    const c=getColorFromNum(r.number);
+    if(c.includes('red')) colFreq.red++;
+    if(c.includes('green')) colFreq.green++;
+    if(c.includes('violet')) colFreq.violet++;
+  });
+  const maxCol = Math.max(colFreq.red,colFreq.green,colFreq.violet);
+  document.getElementById('colorDist').innerHTML=`
+    <div class="color-dist-item">
+      <div class="color-dist-bar-wrap"><div class="color-dist-bar" style="height:${(colFreq.red/maxCol)*80}px;background:var(--red)"></div></div>
+      <div class="color-dist-num" style="color:var(--red)">${colFreq.red}</div>
+      <div class="color-dist-label">RED</div>
+    </div>
+    <div class="color-dist-item">
+      <div class="color-dist-bar-wrap"><div class="color-dist-bar" style="height:${(colFreq.green/maxCol)*80}px;background:var(--green)"></div></div>
+      <div class="color-dist-num" style="color:var(--green)">${colFreq.green}</div>
+      <div class="color-dist-label">GREEN</div>
+    </div>
+    <div class="color-dist-item">
+      <div class="color-dist-bar-wrap"><div class="color-dist-bar" style="height:${(colFreq.violet/maxCol)*80}px;background:var(--violet)"></div></div>
+      <div class="color-dist-num" style="color:var(--violet)">${colFreq.violet}</div>
+      <div class="color-dist-label">VIOLET</div>
+    </div>`;
+
+  const sizeFreq = {Big:0,Small:0};
+  allResults.forEach(r=>sizeFreq[getSizeFromNum(r.number)]++);
+  document.getElementById('sizeDist').innerHTML=`
+    <div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="color:#60a5fa;font-weight:700">BIG</span><span>${sizeFreq.Big}</span>
+      </div>
+      <div style="height:8px;background:var(--border2);border-radius:4px"><div style="height:100%;width:${(sizeFreq.Big/100)*100}%;background:linear-gradient(90deg,var(--purple),var(--blue));border-radius:4px"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="color:var(--cyan);font-weight:700">SMALL</span><span>${sizeFreq.Small}</span>
+      </div>
+      <div style="height:8px;background:var(--border2);border-radius:4px"><div style="height:100%;width:${(sizeFreq.Small/100)*100}%;background:linear-gradient(90deg,var(--cyan),var(--green));border-radius:4px"></div></div>
+    </div>`;
+
+  const colors = last.map(r=>getColorFromNum(r.number));
+  const sizes = last.map(r=>getSizeFromNum(r.number));
+  let cStreak=1; for(let i=1;i<colors.length;i++){if(colors[i]===colors[0])cStreak++;else break;}
+  let sStreak=1; for(let i=1;i<sizes.length;i++){if(sizes[i]===sizes[0])sStreak++;else break;}
+
+  const numFreq2 = Array(10).fill(0);
+  last.slice(0,20).forEach(r=>numFreq2[r.number]++);
+  const hotNum = numFreq2.indexOf(Math.max(...numFreq2));
+  const coldNum = numFreq2.indexOf(Math.min(...numFreq2));
+
+  document.getElementById('streakInfo').innerHTML=`
+    Current Color Streak: <span>${cStreak}x ${colors[0].toUpperCase()}</span><br>
+    Current Size Streak: <span>${sStreak}x ${sizes[0].toUpperCase()}</span><br>
+    Hot Number (last 20): <span>#${hotNum} (${numFreq2[hotNum]} times)</span><br>
+    Cold Number (last 20): <span>#${coldNum} (${numFreq2[coldNum]} times)</span><br>
+    Manipulation Alert: <span>${cStreak>=4?'⚠️ TRAP LIKELY – Color break expected':'✅ Normal pattern'}</span><br>
+    System Tendency: <span>${sStreak>=3?'🔄 Reversal Signal':cStreak>=3?'⚠️ Watch for break':'📊 Balanced'}</span>`;
+}
+
+// ===================== DOWNLOAD ANALYSIS =====================
+function downloadAnalysisData() {
+  if(!allResults.length) { alert('Load results first!'); return; }
+  const pred = runPredictionEngine(allResults);
+  const data = {
+    timestamp: new Date().toISOString(),
+    totalResults: allResults.length,
+    latestPeriod: allResults[allResults.length-1]?.issueNumber,
+    numberFrequency: pred.analysis.numFreq,
+    colorFrequency: pred.analysis.colFreq,
+    sizeFrequency: pred.analysis.sizeFreq,
+    currentColorStreak: `${pred.analysis.colorStreak}x ${pred.analysis.colorStreakVal}`,
+    currentSizeStreak: `${pred.analysis.sizeStreak}x ${pred.analysis.sizeStreakVal}`,
+    alternatingColorPattern: pred.analysis.isAltPattern,
+    alternatingSizePattern: pred.analysis.isAltSizePattern,
+    recentColorBalance: {red: pred.analysis.recentRed, green: pred.analysis.recentGreen},
+    recentSizeBalance: {big: pred.analysis.recentBig, small: pred.analysis.recentSmall},
+    colorPredictionLogic: pred.analysis.predColorLogic,
+    sizePredictionLogic: pred.analysis.predSizeLogic,
+    lastPrediction: { number: pred.number, size: pred.size, color: pred.color, confidence: pred.confidence+'%' },
+    rawResults: allResults
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='unix-predict-analysis.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===================== ADVANCED ANALYSIS =====================
+function showAdvancedAnalysis(pred) {
+  const a = pred.analysis;
+  const panel = document.getElementById('advancedAnalysisPanel');
+  const content = document.getElementById('advAnalysisContent');
+  panel.style.display = 'block';
+
+  const lastPH = predictionHistory[0];
+  const prevWasLoss = lastPH && lastPH.result === 'loss';
+
+  // Color signal strength
+  const colorSignalStr = a.colorStreak >= 4 ? '🔴 VERY STRONG (Manipulation Trap)'
+    : a.colorStreak >= 3 ? '🟡 STRONG (Streak Reversal)'
+    : a.isAltPattern ? '🟡 MODERATE (Alt Pattern)'
+    : a.recentRed > 6 ? '🟠 MODERATE (Red Dominated)'
+    : a.recentGreen > 6 ? '🟠 MODERATE (Green Dominated)'
+    : '⚪ WEAK (Balanced)';
+
+  // Size signal strength
+  const sizeSignalStr = a.sizeStreak >= 4 ? '🔴 VERY STRONG (Size Trap)'
+    : a.sizeStreak >= 3 ? '🟡 STRONG (Size Streak)'
+    : a.isAltSizePattern ? '🟡 MODERATE (Alt Size)'
+    : a.recentBig > 6 ? '🟠 MODERATE (Big Dominated)'
+    : a.recentSmall > 6 ? '🟠 MODERATE (Small Dominated)'
+    : '⚪ WEAK (Balanced)';
+
+  const numFreq = a.numFreq;
+  const coldNums = numFreq.map((f,i)=>({n:i,f})).sort((x,y)=>x.f-y.f).slice(0,3).map(x=>x.n).join(', ');
+  const hotNums = numFreq.map((f,i)=>({n:i,f})).sort((x,y)=>y.f-x.f).slice(0,3).map(x=>x.n).join(', ');
+
+  const rows = [
+    ['Color Streak', `${a.colorStreak}x ${a.colorStreakVal.toUpperCase()}`],
+    ['Size Streak', `${a.sizeStreak}x ${a.sizeStreakVal.toUpperCase()}`],
+    ['Color Signal', colorSignalStr],
+    ['Size Signal', sizeSignalStr],
+    ['Last 10 Color Split', `🔴 Red: ${a.recentRed} | 🟢 Green: ${a.recentGreen}`],
+    ['Last 10 Size Split', `⬆️ Big: ${a.recentBig} | ⬇️ Small: ${a.recentSmall}`],
+    ['Alt Color Pattern', a.isAltPattern ? '✅ YES' : '❌ NO'],
+    ['Alt Size Pattern', a.isAltSizePattern ? '✅ YES' : '❌ NO'],
+    ['Hot Numbers', `🔥 ${hotNums}`],
+    ['Cold Numbers', `❄️ ${coldNums}`],
+    ['Color Logic', a.predColorLogic],
+    ['Size Logic', a.predSizeLogic],
+    ['Final Prediction', `${pred.size.toUpperCase()} | ${pred.color.toUpperCase().replace('-','+')} | Confidence: ${pred.confidence}%`],
+  ];
+
+  if (prevWasLoss) {
+    rows.unshift(['⚠️ MODE', '🔥 SURESHOT ACTIVE — Previous prediction lost']);
+    rows.unshift(['Loss Reason', getLossReason(a)]);
+  }
+
+  content.innerHTML = rows.map(([k,v])=>`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(26,26,62,0.7)">
+      <span style="color:var(--muted);min-width:140px;font-size:10px;letter-spacing:0.3px">${k}</span>
+      <span style="color:var(--text);text-align:right;font-size:10px">${v}</span>
+    </div>`).join('');
+}
+
+// ===================== INIT =====================
+animateCanvases();
+fetchResults();
+setInterval(fetchResults, REFRESH_INTERVAL);
+setProgress(100);
+</script>
+</body>
+</html>
